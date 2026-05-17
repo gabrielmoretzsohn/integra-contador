@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Elo Gestão Contábil{% endblock %}
+{% block page_title %}Painel Administrativo{% endblock %}
+
+{% block content %}
+<div class="page-title">Dashboard</div>
+<div class="page-subtitle">Visão geral do monitoramento fiscal</div>
+
+<!-- Cards linha 1 -->
+<div class="cards-grid cards-grid-4">
+  <div class="metric-card">
+    <div class="metric-card-info">
+      <div class="metric-label">Empresas Ativas</div>
+      <div class="metric-value">{{ total_empresas }}</div>
+      <div class="metric-desc">Total monitoradas</div>
+    </div>
+    <div class="metric-icon ic-dourado"><i class="fas fa-building"></i></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-card-info">
+      <div class="metric-label">CNDs Válidas</div>
+      <div class="metric-value" style="color:var(--verde)">{{ cnds_ok }}</div>
+      <div class="metric-desc">Certidões em dia</div>
+    </div>
+    <div class="metric-icon ic-verde"><i class="fas fa-file-certificate"></i></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-card-info">
+      <div class="metric-label">Alertas Pendentes</div>
+      <div class="metric-value" style="color:var(--amarelo)">{{ alertas_pendentes }}</div>
+      <div class="metric-desc">Requerem atenção</div>
+    </div>
+    <div class="metric-icon ic-amarelo"><i class="fas fa-exclamation-triangle"></i></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-card-info">
+      <div class="metric-label">Mensagens e-CAC</div>
+      <div class="metric-value" style="color:var(--azul)">{{ msgs_nao_lidas }}</div>
+      <div class="metric-desc">Não lidas</div>
+    </div>
+    <div class="metric-icon ic-azul"><i class="fas fa-envelope"></i></div>
+  </div>
+</div>
+
+<!-- Cards linha 2 -->
+<div class="cards-grid cards-grid-3">
+  <div class="metric-card">
+    <div class="metric-card-info">
+      <div class="metric-label">Guias Pendentes</div>
+      <div class="metric-value">{{ guias_pendentes }}</div>
+      <div class="metric-desc">DCTF, PGDAS, MIT</div>
+    </div>
+    <div class="metric-icon ic-dourado"><i class="fas fa-file-invoice-dollar"></i></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-card-info">
+      <div class="metric-label">Próxima Sincronização</div>
+      <div class="metric-value" style="font-size:20px;margin-top:4px">{{ proxima_sync }}</div>
+      <div class="metric-desc">Ciclo automático de 15 dias</div>
+    </div>
+    <div class="metric-icon ic-amarelo"><i class="fas fa-clock"></i></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-card-info">
+      <div class="metric-label">Taxa de Regularidade</div>
+      <div class="metric-value" style="color:var(--verde)">{{ taxa_regularidade }}%</div>
+      <div class="metric-desc">Empresas regulares</div>
+    </div>
+    <div class="metric-icon ic-verde"><i class="fas fa-chart-line"></i></div>
+  </div>
+</div>
+
+<!-- Painéis inferiores -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+  <!-- Últimas empresas -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Últimas Empresas Cadastradas</div>
+        <div class="panel-sub">Empresas adicionadas recentemente</div>
+      </div>
+      <a href="{{ url_for('empresas.index') }}" class="btn btn-outline btn-sm">
+        Ver todas
+      </a>
+    </div>
+    <div class="panel-body">
+      {% for emp in ultimas_empresas %}
+      <div class="empresa-row">
+        <div class="empresa-icon"><i class="fas fa-building"></i></div>
+        <div style="flex:1">
+          <div class="empresa-nome">{{ emp.nome }}</div>
+          <div class="empresa-cnpj">{{ emp.cnpj_fmt }}</div>
+        </div>
+        {% set st = status_emp.get(emp.cnpj, '') %}
+        {% if st == 'ok' %}
+          <i class="fas fa-check-circle" style="color:var(--verde);font-size:18px"></i>
+        {% elif st == 'pendente' %}
+          <i class="fas fa-clock" style="color:var(--amarelo);font-size:18px"></i>
+        {% else %}
+          <i class="fas fa-circle" style="color:var(--bege2);font-size:12px"></i>
+        {% endif %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:20px;color:var(--texto3);font-size:13px">
+        Nenhuma empresa cadastrada ainda.
+        <br><a href="{{ url_for('empresas.index') }}" class="btn btn-primary btn-sm" style="margin-top:10px">
+          <i class="fas fa-plus"></i> Adicionar empresa
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Alertas recentes -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Alertas Recentes</div>
+        <div class="panel-sub">Pendências que requerem atenção</div>
+      </div>
+      <a href="{{ url_for('dashboard.alertas') }}" class="btn btn-outline btn-sm">
+        Ver todos
+      </a>
+    </div>
+    <div class="panel-body">
+      {% if alertas %}
+        {% for a in alertas %}
+        <div class="empresa-row">
+          <div class="empresa-icon" style="background:{% if a.tipo=='irregularidade' %}#FEE2E2;color:var(--vermelho){% elif a.tipo=='parcelamento' %}#FEF3C7;color:var(--amarelo){% else %}#DBEAFE;color:var(--azul){% endif %}">
+            <i class="fas fa-{% if a.tipo=='irregularidade' %}exclamation-triangle{% elif a.tipo=='parcelamento' %}file-invoice-dollar{% else %}clock{% endif %}"></i>
+          </div>
+          <div style="flex:1">
+            <div class="empresa-nome">{{ a.empresa.nome if a.empresa else '—' }}</div>
+            <div class="empresa-cnpj">{{ a.mensagem }}</div>
+          </div>
+          <div style="font-size:10px;color:var(--texto3)">
+            {{ a.criado_em.strftime('%d/%m') }}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:30px;color:var(--texto3)">
+          <i class="fas fa-check-circle" style="font-size:40px;color:var(--verde);display:block;margin-bottom:10px"></i>
+          <div style="font-size:13px">Nenhum alerta pendente</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh a cada 60s
+setTimeout(() => location.reload(), 60000);
+</script>
+{% endblock %}

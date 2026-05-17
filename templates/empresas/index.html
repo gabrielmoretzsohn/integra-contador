@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Empresas{% endblock %}
+{% block page_title %}Empresas{% endblock %}
+{% block content %}
+<div class="page-title">Empresas</div>
+<div class="page-subtitle">Gestao das empresas monitoradas</div>
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">{{ empresas|length }} empresa(s) ativa(s)</div>
+    <a href="{{ url_for('diagnosticos.sincronizar') }}" class="btn btn-primary btn-sm"><i class="fas fa-sync-alt"></i> Sincronizar todas</a>
+  </div>
+  <table>
+    <thead><tr><th>Empresa</th><th>CNPJ</th><th>Regime</th><th>SITFIS</th><th>DCTF</th><th>PGDAS</th><th>Caixa</th></tr></thead>
+    <tbody>
+    {% for emp in empresas %}{% set obs = status_map.get(emp.id, {}) %}
+    <tr>
+      <td><div style="font-weight:600;font-size:13px">{{ emp.nome }}</div></td>
+      <td style="font-size:12px;font-family:monospace">{{ emp.cnpj_fmt }}</td>
+      <td><span class="badge badge-cinza">{{ emp.regime }}</span></td>
+      {% for srv in ['sitfis','dctfweb','pgdas','caixa'] %}{% set ob = obs.get(srv) %}
+      <td>{% if ob %}<span class="badge badge-{{ ob.status if ob.status in ['ok','pendente','erro'] else 'cinza' }}">{% if ob.status=='ok' %}✓ OK{% elif ob.status=='pendente' %}⏳{% else %}✗{% endif %}</span>{% else %}<span style="color:var(--texto3)">—</span>{% endif %}</td>
+      {% endfor %}
+    </tr>
+    {% else %}<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--texto3)">Adicione empresas ao lado.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div>
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-header"><div class="panel-title">Adicionar Empresa</div></div>
+    <div class="panel-body">
+      <form method="POST" action="{{ url_for('empresas.nova') }}">
+        <div class="form-group"><label>CNPJ</label><input type="text" name="cnpj" class="form-control" placeholder="00.000.000/0001-00" required></div>
+        <div class="form-group"><label>Razao Social</label><input type="text" name="nome" class="form-control" required></div>
+        <div class="form-group"><label>Regime</label><select name="regime" class="form-control"><option value="lucro">Lucro Presumido/Real</option><option value="simples">Simples Nacional</option><option value="mei">MEI</option></select></div>
+        <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-plus"></i> Adicionar</button>
+      </form>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title">Importar Lista</div></div>
+    <div class="panel-body">
+      <p style="font-size:12px;color:var(--texto3);margin-bottom:8px">CNPJ  NOME  [regime]</p>
+      <form method="POST" action="{{ url_for('empresas.importar') }}">
+        <textarea name="lista" class="form-control" rows="5" style="font-family:monospace;font-size:12px"></textarea>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px"><i class="fas fa-upload"></i> Importar</button>
+      </form>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

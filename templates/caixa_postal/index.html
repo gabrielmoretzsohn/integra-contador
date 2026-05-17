@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Caixa Postal{% endblock %}
+{% block page_title %}Caixa Postal{% endblock %}
+{% block content %}
+<div class="page-title">Caixa Postal e-CAC</div>
+<div class="page-subtitle">Mensagens da Receita Federal — {{ periodo }}</div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">Status por empresa</div>
+    <a href="{{ url_for('diagnosticos.index') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-sync-alt"></i> Atualizar
+    </a>
+  </div>
+  <table>
+    <thead><tr><th>Empresa</th><th>Status</th><th>Ultima atualizacao</th><th>Detalhe</th></tr></thead>
+    <tbody>
+    {% for item in dados %}
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="empresa-icon"><i class="fas fa-building"></i></div>
+          <div>
+            <div class="empresa-nome">{{ item.emp.nome }}</div>
+            <div class="empresa-cnpj">{{ item.emp.cnpj_fmt }}</div>
+          </div>
+        </div>
+      </td>
+      <td>{% if item.obs %}<span class="badge badge-{{ item.obs.status }}">{{ item.obs.status.title() }}</span>{% else %}<span class="badge badge-cinza">Nao consultada</span>{% endif %}</td>
+      <td style="font-size:12px;color:var(--texto3)">{% if item.obs and item.obs.atualizado_em %}{{ item.obs.atualizado_em.strftime('%d/%m/%Y %H:%M') }}{% else %}—{% endif %}</td>
+      <td style="font-size:12px">{% if item.obs %}{{ item.obs.detalhe or '—' }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

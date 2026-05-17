@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elo Gestão Contábil — Acesso</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+  --dourado: #C9A84C; --dourado2: #B8963E;
+  --bege: #F5F0E8; --bege2: #EDE8DC;
+  --texto: #2D2416; --texto2: #6B5E45; --texto3: #9B8E7A;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #FAF7F2;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+}
+.logo-area {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.logo-dots {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+}
+.logo-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+}
+.logo-dot-gold  { background: var(--dourado); }
+.logo-dot-dark  { background: #4A3728; }
+.logo-line      { width: 80px; height: 1px; background: var(--dourado); }
+.logo-name {
+  font-size: 20px; font-weight: 700; letter-spacing: 2px;
+  color: var(--texto); text-transform: uppercase;
+  font-family: Georgia, serif;
+}
+.logo-name span { color: var(--texto3); font-weight: 400; }
+
+/* ── Main grid ── */
+.main-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 440px;
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 40px 40px;
+  width: 100%;
+  align-items: center;
+}
+
+/* ── Left side ── */
+.left h1 { font-size: 42px; font-weight: 800; color: var(--texto); line-height: 1.1; }
+.left h2 { font-size: 16px; font-weight: 600; color: var(--dourado);
+            margin: 6px 0 14px; letter-spacing: .5px; }
+.left p  { font-size: 14px; color: var(--texto2); line-height: 1.6;
+            max-width: 420px; margin-bottom: 28px; }
+.features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.feature-card {
+  background: white; border: 1.5px solid var(--bege2);
+  border-radius: 10px; padding: 14px 16px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.feature-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #FFF5E0; color: var(--dourado);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.feature-title { font-size: 13px; font-weight: 700; color: var(--texto); }
+.feature-desc  { font-size: 11px; color: var(--texto3); margin-top: 2px;
+                  line-height: 1.4; }
+.left-footer { margin-top: 20px; font-size: 11px; color: var(--texto3); }
+
+/* ── Right side (login card) ── */
+.login-card {
+  background: white;
+  border: 1.5px solid var(--bege2);
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.08);
+}
+.login-card h3 {
+  font-size: 20px; font-weight: 700; color: var(--texto);
+  text-align: center; margin-bottom: 4px;
+}
+.login-card p {
+  font-size: 13px; color: var(--texto3); text-align: center;
+  margin-bottom: 24px;
+}
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--texto2); margin-bottom: 5px;
+}
+.input-wrap { position: relative; }
+.form-control {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid var(--bege2);
+  border-radius: 10px; font-size: 14px; color: var(--texto);
+  background: #FAFAF8; transition: .15s;
+}
+.form-control:focus {
+  outline: none; border-color: var(--dourado);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(201,168,76,.15);
+}
+.eye-btn {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--texto3); font-size: 15px;
+}
+.btn-entrar {
+  width: 100%; padding: 12px;
+  background: var(--dourado);
+  color: white; border: none; border-radius: 10px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  transition: .15s; margin-top: 4px;
+}
+.btn-entrar:hover { background: var(--dourado2); }
+.login-footer {
+  text-align: center; margin-top: 16px;
+  font-size: 12px; color: var(--texto3);
+}
+.login-footer a { color: var(--dourado); text-decoration: none; font-weight: 600; }
+.alert-erro {
+  background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;
+  border-radius: 8px; padding: 10px 14px; font-size: 13px;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .main-grid { grid-template-columns: 1fr; padding: 20px; }
+  .left { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-dots">
+      <div class="logo-line"></div>
+      <div class="logo-dot logo-dot-gold"></div>
+      <div class="logo-dot logo-dot-dark"></div>
+      <div class="logo-line"></div>
+    </div>
+    <div class="logo-name">Elo <span>Gestão</span> Contábil</div>
+  </div>
+</div>
+
+<div class="main-grid">
+  <!-- Esquerda -->
+  <div class="left">
+    <h1>Monitor<br>Fiscal</h1>
+    <h2>ELO GESTÃO CONTÁBIL</h2>
+    <p>Ferramentas inteligentes para monitoramento fiscal automatizado com integração à Receita Federal.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+        <div>
+          <div class="feature-title">Diagnóstico Fiscal</div>
+          <div class="feature-desc">Consulta automática a cada 15 dias</div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-file-invoice"></i></div>
+        <div>
+          <div class="feature-title">DCTFWeb & MIT</div>
+          <div class="feature-desc">Verificação de transmissão</div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-envelope"></i></div>
+        <div>
+          <div class="feature-title">Caixa Postal</div>
+          <div class="feature-desc">Mensagens do e-CAC monitoradas</div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-users"></i></div>
+        <div>
+          <div class="feature-title">Portal da Equipe</div>
+          <div class="feature-desc">Acesso seguro para todos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="left-footer">
+      <i class="fas fa-link"></i> Integrado com API SERPRO Integra Contador
+    </div>
+  </div>
+
+  <!-- Direita: formulário -->
+  <div class="login-card">
+    <h3>Acesse o Sistema</h3>
+    <p>Entre com suas credenciais</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+      <div class="alert-erro">
+        <i class="fas fa-exclamation-circle"></i> {{ msg }}
+      </div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" name="email" class="form-control"
+               placeholder="seu@email.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div class="input-wrap">
+          <input type="password" name="senha" id="senha-input"
+                 class="form-control" placeholder="••••••••" required>
+          <button type="button" class="eye-btn" onclick="toggleSenha()">
+            <i class="fas fa-eye" id="eye-icon"></i>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="btn-entrar">Entrar</button>
+    </form>
+
+    <div class="login-footer">
+      Problemas para acessar?
+      <a href="mailto:suporte@elogestao.com.br">Entre em contato</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSenha() {
+  const input = document.getElementById('senha-input');
+  const icon  = document.getElementById('eye-icon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+</script>
+</body>
+</html>

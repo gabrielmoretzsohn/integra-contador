@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Executando{% endblock %}
+{% block page_title %}Executando Consulta{% endblock %}
+{% block content %}
+<div class="page-title">Executando Consulta #{{ consulta.id }}</div>
+<div class="page-subtitle">Aguarde a conclusao...</div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title" id="status-txt"><i class="fas fa-spinner fa-spin"></i> Processando {{ consulta.n_empresas }} empresa(s)...</div>
+  </div>
+  <div class="panel-body">
+    <div class="progress" style="margin-bottom:16px"><div class="progress-bar" id="pb" style="width:0%"></div></div>
+    <div class="terminal" id="log" style="height:400px">{{ consulta.log or '' }}</div>
+    <div style="margin-top:14px;text-align:right">
+      <a href="{{ url_for('empresas.index') }}" class="btn btn-outline" id="btn-fim" style="display:none">Ver resultados</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const cid = {{ consulta.id }};
+async function poll(){
+  const r = await fetch('/diagnosticos/status/'+cid);
+  const d = await r.json();
+  document.getElementById('log').textContent = d.log;
+  document.getElementById('log').scrollTop = 99999;
+  if(d.status === 'concluida' || d.status === 'erro'){
+    document.getElementById('pb').style.width = '100%';
+    document.getElementById('status-txt').innerHTML = d.status==='concluida'
+      ? '<i class="fas fa-check-circle" style="color:var(--verde)"></i> Concluida — '+d.sucessos+' OK, '+d.erros+' erro(s)'
+      : '<i class="fas fa-times-circle" style="color:var(--vermelho)"></i> Erro';
+    document.getElementById('btn-fim').style.display = 'inline-flex';
+  } else { setTimeout(poll, 2000); }
+}
+poll();
+</script>
+{% endblock %}

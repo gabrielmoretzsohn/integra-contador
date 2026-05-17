@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Alertas{% endblock %}
+{% block page_title %}Alertas{% endblock %}
+{% block content %}
+<div class="page-title">Alertas</div>
+<div class="page-subtitle">Pendencias que requerem atencao</div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">{{ alertas|length }} alerta(s)</div>
+    <a href="{{ url_for('dashboard.marcar_lido', aid=0) }}" class="btn btn-outline btn-sm" onclick="return confirm('Marcar todos como lidos?')">Marcar todos lidos</a>
+  </div>
+  <table>
+    <thead><tr><th>Empresa</th><th>Tipo</th><th>Mensagem</th><th>Data</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for a in alertas %}
+    <tr style="{% if not a.lido %}background:var(--dourado-bg){% endif %}">
+      <td><strong>{{ a.empresa.nome if a.empresa else '—' }}</strong></td>
+      <td><span class="badge badge-{% if a.tipo=='irregularidade' %}erro{% elif a.tipo=='parcelamento' %}pendente{% else %}dourado{% endif %}">{{ a.tipo }}</span></td>
+      <td style="font-size:12px">{{ a.mensagem }}</td>
+      <td style="font-size:11px;color:var(--texto3)">{{ a.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+      <td>{% if not a.lido %}<button onclick="lerAlerta({{ a.id }},this)" class="btn btn-outline btn-xs">Marcar lido</button>{% else %}<span class="badge badge-ok">Lido</span>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="text-align:center;padding:40px">
+      <i class="fas fa-check-circle" style="font-size:36px;color:var(--verde);display:block;margin-bottom:8px"></i>
+      Nenhum alerta pendente!
+    </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+async function lerAlerta(id, btn){
+  await fetch('/alertas/'+id+'/ler');
+  btn.closest('tr').style.background='';
+  btn.outerHTML='<span class="badge badge-ok">Lido</span>';
+}
+</script>
+{% endblock %}

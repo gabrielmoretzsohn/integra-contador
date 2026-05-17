@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Guias{% endblock %}
+{% block page_title %}Guias e Declaracoes{% endblock %}
+{% block content %}
+<div class="page-title">Guias e Declaracoes</div>
+<div class="page-subtitle">Status das obrigacoes acessorias — {{ periodo }}</div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">Status por empresa</div>
+    <a href="{{ url_for('diagnosticos.index') }}" class="btn btn-primary btn-sm"><i class="fas fa-play"></i> Nova consulta</a>
+  </div>
+  <table>
+    <thead><tr><th>Empresa</th><th>SITFIS</th><th>DCTFWeb</th><th>MIT</th><th>PGDAS</th><th>Parcelamento</th></tr></thead>
+    <tbody>
+    {% for item in dados %}{% set obs = item.obs %}
+    <tr>
+      <td><div class="empresa-nome">{{ item.emp.nome }}</div><div class="empresa-cnpj">{{ item.emp.cnpj_fmt }}</div></td>
+      {% for srv in ['sitfis','dctfweb','mit','pgdas','parcelamento'] %}{% set ob = obs.get(srv) %}
+      <td>{% if ob %}<span class="badge badge-{{ ob.status if ob.status in ['ok','pendente','erro'] else 'cinza' }}">{% if ob.status=='ok' %}OK{% elif ob.status=='pendente' %}Pendente{% elif ob.status=='nao_aplicavel' %}N/A{% else %}Erro{% endif %}</span>{% else %}<span style="color:var(--texto3)">—</span>{% endif %}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

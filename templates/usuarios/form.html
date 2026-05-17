@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}{% if u %}Editar{% else %}Novo{% endif %} Usuario{% endblock %}
+{% block page_title %}{% if u %}Editar{% else %}Novo{% endif %} Usuario{% endblock %}
+{% block content %}
+<div style="max-width:480px">
+<div class="panel" style="padding:24px">
+  <form method="POST">
+    <div class="form-group"><label>Nome completo</label><input type="text" name="nome" class="form-control" value="{{ u.nome if u else '' }}" required></div>
+    {% if not u %}<div class="form-group"><label>E-mail</label><input type="email" name="email" class="form-control" required></div>
+    <div class="form-group"><label>Senha</label><input type="password" name="senha" class="form-control" required></div>{% endif %}
+    <div class="form-group"><label>Perfil</label>
+      <select name="perfil" class="form-control">
+        <option value="operador" {% if u and u.perfil=='operador' %}selected{% endif %}>Operador</option>
+        <option value="gestor" {% if u and u.perfil=='gestor' %}selected{% endif %}>Gestor</option>
+        <option value="admin" {% if u and u.perfil=='admin' %}selected{% endif %}>Administrador</option>
+      </select></div>
+    {% if u %}<div class="form-group" style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="ativo" {% if u.ativo %}checked{% endif %} id="ativo"><label for="ativo" style="margin:0">Usuario ativo</label></div>
+    <div class="form-group"><label>Nova senha (deixe em branco para nao alterar)</label><input type="password" name="nova_senha" class="form-control"></div>{% endif %}
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar</button>
+      <a href="{{ url_for('usuarios.index') }}" class="btn btn-outline">Cancelar</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

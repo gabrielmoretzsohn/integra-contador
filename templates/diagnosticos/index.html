@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block title %}Diagnosticos{% endblock %}
+{% block page_title %}Diagnosticos Fiscais{% endblock %}
+
+{% block extra_css %}
+<style>
+.painel{display:grid;grid-template-columns:300px 1fr;gap:20px}
+.servicos-lista,.empresas-lista{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
+.check-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:.2s;font-size:13px}
+.check-item:hover{border-color:#2563eb;background:#f0f7ff}
+.check-item input[type=checkbox]{width:16px;height:16px;accent-color:#2563eb}
+.check-item.checked{border-color:#2563eb;background:#eff6ff}
+.grupo-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-top:10px;margin-bottom:4px}
+.periodo-row{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.periodo-row input{width:60px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center}
+.log-box{background:#1e1e1e;color:#d4d4d4;font-family:'Courier New',monospace;font-size:12px;
+         padding:14px;border-radius:8px;height:320px;overflow-y:auto;line-height:1.7;display:none}
+.progress-wrap{display:none;margin-bottom:12px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="painel">
+
+  <!-- Coluna esquerda: serviços -->
+  <div>
+    <div class="table-card" style="padding:16px">
+      <h3 style="font-size:13px;color:#1a3a6c;margin-bottom:12px">
+        <i class="fas fa-tasks"></i> Serviços a Consultar
+      </h3>
+
+      {% set grupo_atual = namespace(g='') %}
+      {% for srv in servicos %}
+        {% if srv.grupo != grupo_atual.g %}
+          {% set grupo_atual.g = srv.grupo %}
+          <div class="grupo-label">{{ srv.grupo }}</div>
+        {% endif %}
+        <label class="check-item" id="lbl-{{ srv.id }}">
+          <input type="checkbox" name="servico" value="{{ srv.id }}"
+                 onchange="toggleCheck(this)"
+                 {% if srv.id in ['sitfis','caixa'] %}checked{% endif %}>
+          {{ srv.nome }}
+        </label>
+      {% endfor %}
+
+      <div style="margin-top:16px;border-top:1px solid #f1f5f9;padding-top:14px">
+        <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:8px">Período de referência</div>
+        <div class="periodo-row">
+          <input type="text" id="dctf_mes" value="{{ mes_atual }}" placeholder="MM" maxlength="2">
+          <span>/</span>
+          <input type="text" id="dctf_ano" value="{{ ano_atual }}" placeholder="AAAA" maxlength="4">
+        </div>
+      </div>
+
+      <button onclick="iniciarConsulta()" class="btn btn-primary" style="width:100%;margin-top:8px" id="btn-iniciar">
+        <i class="fas fa-play"></i> Executar Consulta
+      </button>
+    </div>
+  </div>
+
+  <!-- Coluna direita: empresas + progresso -->
+  <div>
+    <div class="table-card" style="padding:16px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <h3 style="font-size:13px;color:#1a3a6c"><i class="fas fa-building"></i> Selecionar Empresas</h3>
+        <div style="display:flex;gap:8px">
+          <button onclick="marcarTodos(true)" class="btn btn-outline btn-sm">Marcar todas</button>
+          <button onclick="marcarTodos(false)" class="btn btn-outline btn-sm">Desmarcar</button>
+        </div>
+      </div>
+      <input type="text" id="busca-emp" placeholder="🔍 Filtrar empresas..."
+             oninput="filtrarEmpresas()"
+             style="width:100%;padding:7px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;margin-bottom:10px">
+      <div class="empresas-lista" id="lista-empresas">
+        {% for emp in empresas %}
+        <label class="check-item" id="emp-{{ emp.id }}">
+          <input type="checkbox" class="emp-check" value="{{ emp.cnpj }}" checked onchange="toggleCheck(this)">
+          <div>
+            <div style="font-weight:600">{{ emp.nome }}</div>
+            <div style="font-size:11px;color:#94a3b8">{{ emp.cnpj_formatado }} | {{ emp.regime.upper() }}</div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Progresso -->
+    <div id="progresso-box" style="display:none" class="table-card" style="padding:16px">
+      <div style="padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h3 style="font-size:13px;color:#1a3a6c"><i class="fas fa-spinner fa-spin" id="spin"></i> Executando...</h3>
+          <span id="cont-status" style="font-size:12px;color:#64748b"></span>
+        </div>
+        <div class="progress" style="margin-bottom:12px">
+          <div class="progress-bar progress-ok" id="prog-bar" style="width:0%"></div>
+        </div>
+        <div class="log-box" id="log-box"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de resultado -->
+<div id="modal-ok" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+     z-index:200;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:28px 32px;text-align:center;max-width:360px">
+    <i class="fas fa-check-circle" style="font-size:48px;color:#16a34a"></i>
+    <h2 style="margin:12px 0 6px;color:#1a3a6c">Consulta Concluída!</h2>
+    <p id="modal-msg" style="color:#64748b;font-size:13px;margin-bottom:20px"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <a id="modal-link" href="#" class="btn btn-primary">Ver Resultados</a>
+      <button onclick="fecharModal()" class="btn btn-outline">Fechar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const socket = io();
+let consultaId = null;
+let totalEmpresas = 0;
+let processadas = 0;
+
+function toggleCheck(el){
+  el.closest('label').classList.toggle('checked', el.checked);
+}
+document.querySelectorAll('input[type=checkbox]').forEach(cb => toggleCheck(cb));
+
+function marcarTodos(v){
+  document.querySelectorAll('.emp-check').forEach(cb => {
+    cb.checked = v;
+    toggleCheck(cb);
+  });
+}
+
+function filtrarEmpresas(){
+  const t = document.getElementById('busca-emp').value.toLowerCase();
+  document.querySelectorAll('#lista-empresas .check-item').forEach(lbl => {
+    lbl.style.display = lbl.textContent.toLowerCase().includes(t) ? '' : 'none';
+  });
+}
+
+async function iniciarConsulta(){
+  const servicos  = [...document.querySelectorAll('input[name=servico]:checked')].map(e=>e.value);
+  const empresas  = [...document.querySelectorAll('.emp-check:checked')].map(e=>e.value);
+  const dctf_mes  = document.getElementById('dctf_mes').value;
+  const dctf_ano  = document.getElementById('dctf_ano').value;
+
+  if(!servicos.length){ alert('Selecione ao menos um serviço.'); return; }
+  if(!empresas.length){ alert('Selecione ao menos uma empresa.'); return; }
+
+  document.getElementById('btn-iniciar').disabled = true;
+  document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aguarde...';
+  document.getElementById('progresso-box').style.display = 'block';
+  document.getElementById('log-box').style.display = 'block';
+  document.getElementById('log-box').innerHTML = '';
+
+  totalEmpresas = empresas.length;
+  processadas   = 0;
+
+  const r = await fetch('/consultas/iniciar', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({servicos, empresas, dctf_mes, dctf_ano,
+                          simples_mes: dctf_mes, simples_ano: dctf_ano})
+  });
+  const data = await r.json();
+  if(data.erro){ alert(data.erro); return; }
+  consultaId = data.consulta_id;
+}
+
+socket.on('log', data => {
+  if(data.cid !== consultaId) return;
+  const box = document.getElementById('log-box');
+  const linha = document.createElement('div');
+  const txt = data.msg;
+  if(txt.includes('ERRO') || txt.includes('Falhou')) linha.style.color='#f44747';
+  else if(txt.includes('OK') || txt.includes('Sucesso') || txt.includes('Concluido')) linha.style.color='#4ec94e';
+  else if(txt.includes('[')) linha.style.color='#9cdcfe';
+  linha.textContent = txt;
+  box.appendChild(linha);
+  box.scrollTop = box.scrollHeight;
+
+  if(txt.includes('Concluido')) processadas++;
+  const pct = totalEmpresas > 0 ? Math.round(processadas/totalEmpresas*100) : 0;
+  document.getElementById('prog-bar').style.width = pct+'%';
+  document.getElementById('cont-status').textContent = `${processadas}/${totalEmpresas} empresas`;
+});
+
+socket.on('concluida', data => {
+  if(data.cid !== consultaId) return;
+  document.getElementById('prog-bar').style.width = '100%';
+  document.getElementById('spin').className = 'fas fa-check-circle';
+  document.getElementById('modal-msg').textContent =
+    `${data.sucessos} empresa(s) consultadas com sucesso. ${data.erros} erro(s).`;
+  document.getElementById('modal-link').href = `/consultas/${consultaId}/resultado`;
+  document.getElementById('modal-ok').style.display = 'flex';
+  document.getElementById('btn-iniciar').disabled = false;
+  document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-play"></i> Executar Consulta';
+});
+
+function fecharModal(){
+  document.getElementById('modal-ok').style.display = 'none';
+}
+</script>
+{% endblock %}

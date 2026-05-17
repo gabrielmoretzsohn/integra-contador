@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Configuracoes{% endblock %}
+{% block page_title %}Configuracoes{% endblock %}
+{% block content %}
+<div class="page-title">Configuracoes</div>
+<div class="page-subtitle">Credenciais SERPRO e certificado digital</div>
+<div style="max-width:700px">
+{% if api_ok %}<div class="flash flash-success"><i class="fas fa-check-circle"></i> API SERPRO configurada e pronta.</div>{% else %}<div class="flash flash-danger"><i class="fas fa-exclamation-circle"></i> Configure as credenciais SERPRO para usar o sistema.</div>{% endif %}
+<form method="POST" enctype="multipart/form-data">
+  {% for titulo, campos in [
+    ('Credenciais SERPRO', [('consumer_key','Consumer Key'),('consumer_secret','Consumer Secret')]),
+    ('Escritorio', [('cnpj_escritorio','CNPJ do Escritorio (sem pontuacao)'),('nome_escritorio','Nome do Escritorio')]),
+  ] %}
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-header"><div class="panel-title">{{ titulo }}</div></div>
+    <div class="panel-body">
+      {% for nome, label in campos %}
+      <div class="form-group">
+        <label>{{ label }}</label>
+        <input type="{% if 'secret' in nome or 'senha' in nome %}password{% else %}text{% endif %}"
+               name="{{ nome }}" class="form-control"
+               value="{{ cfg.get(nome,'') if 'secret' not in nome and 'senha' not in nome else '' }}"
+               placeholder="{{ '••••••••' if 'secret' in nome or 'senha' in nome else '' }}">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-header"><div class="panel-title">Certificado Digital e-CNPJ</div></div>
+    <div class="panel-body">
+      {% if cfg.get('cert_path') %}<div style="font-size:12px;color:var(--verde);margin-bottom:10px"><i class="fas fa-check-circle"></i> Certificado atual: <strong>{{ cfg.get('cert_path')|basename }}</strong></div>{% endif %}
+      <div class="form-group"><label>Enviar novo certificado (.pfx ou .p12)</label><input type="file" name="cert_file" accept=".pfx,.p12" class="form-control"></div>
+      <div class="form-group"><label>Senha do certificado</label><input type="password" name="cert_senha" class="form-control" placeholder="••••••••"></div>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary" style="padding:12px 28px"><i class="fas fa-save"></i> Salvar Configuracoes</button>
+</form>
+</div>
+{% endblock %}

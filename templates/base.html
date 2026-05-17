@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Elo Gestão Contábil{% endblock %}</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+<style>
+/* ── Design System: Elo Gestão Contábil ─────────────────────────────────── */
+:root {
+  --dourado:     #C9A84C;
+  --dourado2:    #B8963E;
+  --dourado-claro: #F0E6CC;
+  --dourado-bg:  #FDF8F0;
+  --bege:        #F5F0E8;
+  --bege2:       #EDE8DC;
+  --texto:       #2D2416;
+  --texto2:      #6B5E45;
+  --texto3:      #9B8E7A;
+  --branco:      #FFFFFF;
+  --verde:       #2D9A6B;
+  --vermelho:    #DC2626;
+  --amarelo:     #D97706;
+  --azul:        #2563EB;
+  --sidebar-w:   248px;
+  --radius:      12px;
+  --sombra:      0 2px 8px rgba(0,0,0,.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bege);
+       color: var(--texto); display: flex; min-height: 100vh; }
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--branco);
+  border-right: 1px solid var(--bege2);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; height: 100vh;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--bege2);
+}
+.sidebar-logo img { height: 44px; }
+.sidebar-logo-text {
+  font-size: 13px; font-weight: 700; color: var(--texto);
+  letter-spacing: .3px; line-height: 1.3;
+}
+.sidebar-logo-text span { color: var(--dourado); font-size: 11px;
+                           display: block; font-weight: 400; }
+.nav-group { padding: 8px 0; flex: 1; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px;
+  color: var(--texto2); text-decoration: none; font-size: 13.5px;
+  border-radius: 0; transition: .15s; cursor: pointer;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: var(--dourado-bg); color: var(--dourado); }
+.nav-item.ativo {
+  background: var(--dourado-bg);
+  color: var(--dourado);
+  border-left-color: var(--dourado);
+  font-weight: 600;
+}
+.nav-item i { width: 18px; text-align: center; font-size: 15px; }
+.sidebar-status {
+  padding: 12px 18px;
+  border-top: 1px solid var(--bege2);
+  font-size: 11px; color: var(--texto3);
+  display: flex; align-items: center; gap: 6px;
+}
+.dot-verde { width: 7px; height: 7px; border-radius: 50%;
+             background: var(--verde); display: inline-block; }
+
+/* ── Topbar ───────────────────────────────────────────────────────────────── */
+.main { margin-left: var(--sidebar-w); flex: 1; display: flex;
+        flex-direction: column; min-height: 100vh; }
+.topbar {
+  background: var(--branco);
+  border-bottom: 1px solid var(--bege2);
+  padding: 0 28px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-title { font-size: 18px; font-weight: 700; color: var(--texto); }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.btn-sincronizar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px;
+  background: transparent;
+  border: 1.5px solid var(--dourado);
+  color: var(--dourado);
+  border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: .15s; text-decoration: none;
+}
+.btn-sincronizar:hover { background: var(--dourado-bg); }
+.topbar-bell { position: relative; cursor: pointer; color: var(--texto2);
+               font-size: 18px; padding: 6px; }
+.bell-badge {
+  position: absolute; top: 2px; right: 2px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--vermelho);
+}
+.topbar-user {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--texto2); cursor: pointer;
+  padding: 5px 10px; border-radius: 8px;
+  border: 1px solid var(--bege2);
+}
+.topbar-user i { color: var(--dourado); font-size: 18px; }
+
+/* ── Content ──────────────────────────────────────────────────────────────── */
+.content { padding: 28px; flex: 1; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--texto); }
+.page-subtitle { font-size: 13px; color: var(--texto3); margin-top: 3px;
+                  margin-bottom: 24px; }
+
+/* ── Cards de métricas ────────────────────────────────────────────────────── */
+.cards-grid { display: grid; gap: 16px; margin-bottom: 20px; }
+.cards-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.cards-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.cards-grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+.metric-card {
+  background: var(--branco);
+  border: 1px solid var(--bege2);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  box-shadow: var(--sombra);
+}
+.metric-card-info { display: flex; flex-direction: column; gap: 4px; }
+.metric-label { font-size: 12px; color: var(--texto3); font-weight: 500; }
+.metric-value { font-size: 32px; font-weight: 700; color: var(--texto);
+                line-height: 1.1; }
+.metric-desc { font-size: 11px; color: var(--texto3); }
+.metric-icon {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.ic-dourado { background: #FFF5E0; color: var(--dourado); }
+.ic-verde   { background: #E8F8F0; color: var(--verde); }
+.ic-amarelo { background: #FEF3C7; color: var(--amarelo); }
+.ic-azul    { background: #DBEAFE; color: var(--azul); }
+.ic-vermelho{ background: #FEE2E2; color: var(--vermelho); }
+
+/* ── Painéis ──────────────────────────────────────────────────────────────── */
+.panel {
+  background: var(--branco);
+  border: 1px solid var(--bege2);
+  border-radius: var(--radius);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bege2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title { font-size: 14px; font-weight: 700; color: var(--texto); }
+.panel-sub   { font-size: 12px; color: var(--texto3); margin-top: 1px; }
+.panel-body  { padding: 16px 20px; }
+
+/* ── Tabela ───────────────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; }
+th { padding: 10px 14px; text-align: left; font-size: 11px;
+     font-weight: 600; color: var(--texto3); text-transform: uppercase;
+     letter-spacing: .4px; background: #FAFAFA;
+     border-bottom: 1px solid var(--bege2); }
+td { padding: 12px 14px; font-size: 13px; color: var(--texto);
+     border-bottom: 1px solid #F5F0E8; vertical-align: middle; }
+tr:hover td { background: var(--dourado-bg); }
+tr:last-child td { border-bottom: none; }
+
+/* ── Badges ───────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-ok       { background: #E8F8F0; color: var(--verde); }
+.badge-pendente { background: #FEF3C7; color: var(--amarelo); }
+.badge-erro     { background: #FEE2E2; color: var(--vermelho); }
+.badge-cinza    { background: #F5F0E8; color: var(--texto3); }
+.badge-dourado  { background: var(--dourado-claro); color: var(--dourado2); }
+
+/* ── Botões ───────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 8px; border: none;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: .15s;
+}
+.btn-primary  { background: var(--dourado); color: var(--branco); }
+.btn-primary:hover { background: var(--dourado2); }
+.btn-outline  { background: transparent; border: 1.5px solid var(--bege2);
+                color: var(--texto2); }
+.btn-outline:hover { border-color: var(--dourado); color: var(--dourado); }
+.btn-danger   { background: var(--vermelho); color: var(--branco); }
+.btn-sm       { padding: 5px 12px; font-size: 12px; }
+.btn-xs       { padding: 3px 8px; font-size: 11px; }
+
+/* ── Formulários ──────────────────────────────────────────────────────────── */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--texto2); margin-bottom: 5px;
+}
+.form-control {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid var(--bege2);
+  border-radius: 8px; font-size: 13px; color: var(--texto);
+  background: var(--bege); transition: .15s;
+}
+.form-control:focus {
+  outline: none; border-color: var(--dourado);
+  background: var(--branco);
+  box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+}
+
+/* ── Flash messages ───────────────────────────────────────────────────────── */
+.flash { padding: 10px 16px; border-radius: 8px; margin-bottom: 16px;
+         font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.flash-success { background: #E8F8F0; color: var(--verde);
+                  border: 1px solid #A7F3D0; }
+.flash-danger  { background: #FEE2E2; color: var(--vermelho);
+                  border: 1px solid #FECACA; }
+.flash-info    { background: var(--dourado-claro); color: var(--dourado2);
+                  border: 1px solid var(--dourado-claro); }
+
+/* ── Terminal de log ──────────────────────────────────────────────────────── */
+.terminal {
+  background: #1C1C1E; color: #E5E5E5;
+  font-family: 'Courier New', monospace; font-size: 12px;
+  padding: 14px; border-radius: 8px; overflow-y: auto; line-height: 1.7;
+}
+.log-ok    { color: #34D399; }
+.log-erro  { color: #F87171; }
+.log-info  { color: #93C5FD; }
+.log-aviso { color: #FCD34D; }
+
+/* ── Progress ─────────────────────────────────────────────────────────────── */
+.progress { background: var(--bege2); border-radius: 10px;
+             height: 6px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 10px;
+                 background: var(--dourado); transition: width .4s; }
+
+/* ── Lista de empresas ────────────────────────────────────────────────────── */
+.empresa-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--bege2);
+}
+.empresa-row:last-child { border-bottom: none; }
+.empresa-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--dourado-claro); color: var(--dourado);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.empresa-nome  { font-size: 13px; font-weight: 600; color: var(--texto); }
+.empresa-cnpj  { font-size: 11px; color: var(--texto3); }
+
+/* ── Check item ───────────────────────────────────────────────────────────── */
+.check-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1.5px solid var(--bege2);
+  border-radius: 8px; cursor: pointer; font-size: 13px;
+  color: var(--texto2); transition: .15s; margin-bottom: 6px;
+}
+.check-item:hover  { border-color: var(--dourado); color: var(--dourado); }
+.check-item.checked{ border-color: var(--dourado); background: var(--dourado-bg);
+                      color: var(--dourado2); }
+.check-item input  { accent-color: var(--dourado); width: 15px; height: 15px; }
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.35); z-index: 200;
+  align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--branco); border-radius: 16px;
+  padding: 28px 32px; max-width: 420px; width: 92%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  text-align: center;
+}
+.modal h2 { font-size: 18px; color: var(--texto); margin: 12px 0 6px; }
+.modal p  { font-size: 13px; color: var(--texto3); margin-bottom: 20px; }
+
+@media (max-width: 900px) {
+  .cards-grid-4 { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 600px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .cards-grid-4, .cards-grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-text">
+      ELO GESTÃO CONTÁBIL
+      <span>Monitor Fiscal</span>
+    </div>
+  </div>
+
+  <nav class="nav-group">
+    <a href="{{ url_for('dashboard.index') }}"
+       class="nav-item {% if request.endpoint == 'dashboard.index' %}ativo{% endif %}">
+      <i class="fas fa-th-large"></i> Dashboard
+    </a>
+    <a href="{{ url_for('empresas.index') }}"
+       class="nav-item {% if 'empresas' in request.endpoint %}ativo{% endif %}">
+      <i class="fas fa-building"></i> Empresas
+    </a>
+    <a href="{{ url_for('diagnosticos.index') }}"
+       class="nav-item {% if 'diagnosticos' in request.endpoint %}ativo{% endif %}">
+      <i class="fas fa-chart-bar"></i> Diagnósticos
+    </a>
+    <a href="{{ url_for('caixa_postal.index') }}"
+       class="nav-item {% if 'caixa_postal' in request.endpoint %}ativo{% endif %}">
+      <i class="fas fa-envelope"></i> Caixa Postal
+    </a>
+    <a href="{{ url_for('guias.index') }}"
+       class="nav-item {% if 'guias' in request.endpoint %}ativo{% endif %}">
+      <i class="fas fa-file-invoice"></i> Guias
+    </a>
+    {% if current_user.is_gestor %}
+    <a href="{{ url_for('usuarios.index') }}"
+       class="nav-item {% if 'usuarios' in request.endpoint %}ativo{% endif %}">
+      <i class="fas fa-users"></i> Usuários
+    </a>
+    <a href="{{ url_for('configuracoes.index') }}"
+       class="nav-item {% if 'configuracoes' in request.endpoint %}ativo{% endif %}">
+      <i class="fas fa-cog"></i> Configurações
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-status">
+    <span class="dot-verde"></span>
+    API SERPRO Conectada
+  </div>
+</aside>
+
+<!-- ── Main ────────────────────────────────────────────────────────────── -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+    <div class="topbar-right">
+      <a href="{{ url_for('diagnosticos.sincronizar') }}" class="btn-sincronizar">
+        <i class="fas fa-sync-alt"></i> Sincronizar
+      </a>
+      <div class="topbar-bell" id="btn-bell">
+        <i class="fas fa-bell"></i>
+        <span class="bell-badge" id="bell-badge" style="display:none"></span>
+      </div>
+      <div class="topbar-user">
+        <i class="fas fa-user-circle"></i>
+        {{ current_user.nome.split()[0] if current_user.nome else 'Usuário' }}
+        <a href="{{ url_for('auth.logout') }}" style="color:var(--texto3);margin-left:4px"
+           title="Sair"><i class="fas fa-sign-out-alt"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">
+        <i class="fas fa-{% if cat=='success' %}check-circle{% elif cat=='danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+async function checkAlertas() {
+  try {
+    const r = await fetch('/api/alertas/nao-lidos');
+    const d = await r.json();
+    document.getElementById('bell-badge').style.display = d.length ? 'block' : 'none';
+  } catch(e) {}
+}
+checkAlertas();
+setInterval(checkAlertas, 30000);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

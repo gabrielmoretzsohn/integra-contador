@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block page_title %}Usuarios{% endblock %}
+{% block content %}
+<div class="page-title">Usuarios</div>
+<div class="page-subtitle">Gestao de acesso da equipe</div>
+<div style="margin-bottom:14px"><a href="{{ url_for('usuarios.novo') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Novo usuario</a></div>
+<div class="panel">
+  <table>
+    <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Ultimo acesso</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users %}
+    <tr>
+      <td><strong>{{ u.nome }}</strong></td>
+      <td style="font-size:12px">{{ u.email }}</td>
+      <td><span class="badge badge-{% if u.perfil=='admin' %}erro{% elif u.perfil=='gestor' %}dourado{% else %}cinza{% endif %}">{{ u.perfil }}</span></td>
+      <td><span class="badge badge-{% if u.ativo %}ok{% else %}cinza{% endif %}">{{ 'Ativo' if u.ativo else 'Inativo' }}</span></td>
+      <td style="font-size:12px;color:var(--texto3)">{{ u.ultimo_acesso.strftime('%d/%m/%Y %H:%M') if u.ultimo_acesso else '—' }}</td>
+      <td><a href="{{ url_for('usuarios.editar', uid=u.id) }}" class="btn btn-outline btn-xs"><i class="fas fa-edit"></i></a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
